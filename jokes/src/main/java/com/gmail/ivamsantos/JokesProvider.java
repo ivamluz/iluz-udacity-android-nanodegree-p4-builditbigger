@@ -5,12 +5,6 @@ import java.util.List;
 import java.util.Random;
 
 public class JokesProvider {
-    private Random randomGenerator;
-
-    public JokesProvider() {
-        randomGenerator = new Random();
-    }
-
     private static List<String> jokes = Arrays.asList(
             "Funny joke 1",
             "Funny joke 2",
@@ -23,6 +17,11 @@ public class JokesProvider {
             "Funny joke 9",
             "Funny joke 10"
     );
+    private Random randomGenerator;
+
+    public JokesProvider() {
+        randomGenerator = new Random();
+    }
 
     public String getJoke() {
         int randomIndex = randomGenerator.nextInt(jokes.size());
