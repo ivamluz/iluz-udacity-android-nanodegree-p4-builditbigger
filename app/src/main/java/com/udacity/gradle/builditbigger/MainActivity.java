@@ -13,8 +13,6 @@ import com.gmail.ivamsantos.jokestelling.backend.jokesApi.model.Joke;
 import com.udacity.gradle.builditbigger.asynctasks.FetchJokeAsyncTask;
 
 public class MainActivity extends ActionBarActivity implements FetchJokeAsyncTask.FetchJokeAsyncTaskListener {
-    private FetchJokeAsyncTask mFetchJokeAsyncTask;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,11 +42,7 @@ public class MainActivity extends ActionBarActivity implements FetchJokeAsyncTas
     }
 
     public void tellJoke(View view) {
-        if (mFetchJokeAsyncTask == null) {
-            mFetchJokeAsyncTask = new FetchJokeAsyncTask(this);
-        }
-
-        mFetchJokeAsyncTask.execute();
+        new FetchJokeAsyncTask(this).execute();
     }
 
     @Override
