@@ -1,24 +1,20 @@
 package com.udacity.gradle.builditbigger;
 
-import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
 import com.gmail.ivamsantos.jokedisplayer.JokeActivity;
-import com.gmail.ivamsantos.jokestelling.backend.jokesApi.JokesApi;
-import com.google.api.client.extensions.android.http.AndroidHttp;
-import com.google.api.client.extensions.android.json.AndroidJsonFactory;
-import com.google.api.client.googleapis.services.AbstractGoogleClientRequest;
-import com.google.api.client.googleapis.services.GoogleClientRequestInitializer;
+import com.gmail.ivamsantos.jokestelling.backend.jokesApi.model.Joke;
+import com.udacity.gradle.builditbigger.asynctasks.FetchJokeAsyncTask;
 
-import java.io.IOException;
+public class MainActivity extends ActionBarActivity implements FetchJokeAsyncTask.FetchJokeAsyncTaskListener {
+    private FetchJokeAsyncTask mFetchJokeAsyncTask;
 
-public class MainActivity extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,44 +44,22 @@ public class MainActivity extends ActionBarActivity {
     }
 
     public void tellJoke(View view) {
-        new FetchJokeAsyncTask().execute();
+        if (mFetchJokeAsyncTask == null) {
+            mFetchJokeAsyncTask = new FetchJokeAsyncTask(this);
+        }
+
+        mFetchJokeAsyncTask.execute();
     }
 
-    class FetchJokeAsyncTask extends AsyncTask<Void, Void, String> {
-        private JokesApi jokesApiService = null;
-        private Context context;
+    @Override
+    public void onSuccess(Joke joke) {
+        Intent intent = JokeActivity.newIntent(this, joke.getText());
+        startActivity(intent);
+    }
 
-        @Override
-        protected String doInBackground(Void... params) {
-            if (jokesApiService == null) {  // Only do this once
-                JokesApi.Builder builder = new JokesApi.Builder(AndroidHttp.newCompatibleTransport(),
-                        new AndroidJsonFactory(), null)
-                        // options for running against local devappserver4
-                        // https://discussions.udacity.com/t/following-googles-github-tutorial-for-implementing-the-backend-i-get-a-could-not-connect-to-10-0-2-2-port-8080-toast/35549/2?u=ivam_luz
-                        // - 10.0.3.2 is localhost's IP address in Genymotion emulator
-                        // - turn off compression when running against local devappserver
-                        .setRootUrl("http://10.0.3.2:8080/_ah/api/")
-                        .setGoogleClientRequestInitializer(new GoogleClientRequestInitializer() {
-                            @Override
-                            public void initialize(AbstractGoogleClientRequest<?> abstractGoogleClientRequest) throws IOException {
-                                abstractGoogleClientRequest.setDisableGZipContent(true);
-                            }
-                        });
-
-                jokesApiService = builder.build();
-            }
-
-            try {
-                return jokesApiService.tellJoke().execute().getText();
-            } catch (IOException e) {
-                return e.getMessage();
-            }
-        }
-
-        @Override
-        protected void onPostExecute(String joke) {
-            Intent intent = JokeActivity.newIntent(MainActivity.this, joke);
-            startActivity(intent);
-        }
+    @Override
+    public void onError() {
+        String errorMessage = getString(R.string.error_loading_joke);
+        Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT);
     }
 }
