@@ -6,17 +6,44 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.gmail.ivamsantos.jokedisplayer.JokeActivity;
 import com.gmail.ivamsantos.jokestelling.backend.jokesApi.model.Joke;
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.InterstitialAd;
 import com.udacity.gradle.builditbigger.asynctasks.FetchJokeAsyncTask;
 
 public class MainActivity extends ActionBarActivity implements FetchJokeAsyncTask.FetchJokeAsyncTaskListener {
+    private InterstitialAd mInterstitialAd;
+
+    private Button mJokeButton;
+
+    private ProgressBar mProgressBar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mInterstitialAd = new InterstitialAd(this);
+        mInterstitialAd.setAdUnitId("ca-app-pub-3940256099942544/1033173712");
+
+        mInterstitialAd.setAdListener(new AdListener() {
+            @Override
+            public void onAdClosed() {
+                requestNewInterstitial();
+                fetchJoke();
+            }
+        });
+
+        mJokeButton = (Button) findViewById(R.id.tell_joke_button);
+        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
+
+        requestNewInterstitial();
     }
 
     @Override
@@ -42,18 +69,43 @@ public class MainActivity extends ActionBarActivity implements FetchJokeAsyncTas
     }
 
     public void tellJoke(View view) {
+        mJokeButton.setVisibility(View.GONE);
+        mProgressBar.setVisibility(View.VISIBLE);
+
+        if (mInterstitialAd.isLoaded()) {
+            mInterstitialAd.show();
+        } else {
+            fetchJoke();
+        }
+    }
+
+    private void fetchJoke() {
         new FetchJokeAsyncTask(this).execute();
+    }
+
+    private void requestNewInterstitial() {
+        AdRequest adRequest = new AdRequest.Builder()
+                .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+                .build();
+
+        mInterstitialAd.loadAd(adRequest);
     }
 
     @Override
     public void onSuccess(Joke joke) {
         Intent intent = JokeActivity.newIntent(this, joke.getText());
         startActivity(intent);
+
+        mJokeButton.setVisibility(View.VISIBLE);
+        mProgressBar.setVisibility(View.GONE);
     }
 
     @Override
     public void onError() {
         String errorMessage = getString(R.string.error_loading_joke);
         Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT);
+
+        mJokeButton.setVisibility(View.VISIBLE);
+        mProgressBar.setVisibility(View.GONE);
     }
 }
